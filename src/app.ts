@@ -1,13 +1,13 @@
-import express from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import { createServer } from 'http';
 import { join } from 'path';
 import { Server } from 'socket.io';
+import { ErrorMiddleware } from '../middleware/error.middleware';
+import ErrorHandler from '../utils/ErrorHandler';
 
 const app = express();
 
 app.use(express.static('public'));
-// error: efused to execute script from 'http://localhost:3001/templates/index.js' because its MIME type ('text/html') is not executable, and strict MIME type checking is enabled.
-// solution: https://stackoverflow.com/questions/2871655/proper-mime-type-for-javascript-css-and-html-files
 
 const server = createServer(app);
 
@@ -43,5 +43,15 @@ io.on('connection', (socket) => {
 		socket.broadcast.emit('typing_off', '');
 	});
 });
+
+app.all('*', (req: Request, _res: Response, next: NextFunction) => {
+	const err: any = new ErrorHandler(
+		`Can't find ${req.originalUrl} on this server!`,
+		404
+	);
+	next(err);
+});
+
+app.use(ErrorMiddleware);
 
 export default server;
